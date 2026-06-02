@@ -4,7 +4,7 @@ import Link from "next/link";
 import {
   ArrowRight,
   Search, BookOpen, Award, RefreshCw, Layers,
-  Sofa, Bed, ChefHat, Shirt, Leaf, Package,
+  Home, Lightbulb, Shield, Tv, Wind, Wifi, Settings,
   ShieldCheck, BarChart3, Target,
   ChevronRight,
 } from "lucide-react";
@@ -13,34 +13,34 @@ import { prisma } from "@/lib/prisma";
 // ─── Dados estáticos ────────────────────────────────────────────────────────
 
 const categorias = [
-  { slug: "sala",        label: "Sala",        desc: "Sofás, racks, mesas de centro e iluminação.",              Icon: Sofa    },
-  { slug: "quarto",      label: "Quarto",      desc: "Colchões, roupas de cama e organização.",                  Icon: Bed     },
-  { slug: "cozinha",     label: "Cozinha",     desc: "Eletroportáteis, panelas e utensílios que duram.",         Icon: ChefHat },
-  { slug: "lavanderia",  label: "Lavanderia",  desc: "Varais, cestos, organizadores e produtos de limpeza.",     Icon: Shirt   },
-  { slug: "varanda",     label: "Varanda",     desc: "Cortinas, cadeiras, plantas e decoração externa.",         Icon: Leaf    },
-  { slug: "organizacao", label: "Organização", desc: "Caixas, prateleiras, cabides e tudo para reduzir a bagunça.", Icon: Package },
+  { slug: "smart-home",       label: "Smart Home",         desc: "Hubs, automação, assistentes de voz e dispositivos conectados.",     Icon: Home     },
+  { slug: "iluminacao",       label: "Iluminação",         desc: "Lâmpadas inteligentes, fitas LED e controle por app.",               Icon: Lightbulb },
+  { slug: "seguranca",        label: "Segurança",          desc: "Câmeras IP, fechaduras digitais e alarmes inteligentes.",            Icon: Shield   },
+  { slug: "audio-e-video",    label: "Áudio e Vídeo",      desc: "Smart TVs, soundbars, projetores e caixas de som.",                 Icon: Tv       },
+  { slug: "climatizacao",     label: "Climatização",       desc: "Ar-condicionado, purificadores e ventiladores inteligentes.",        Icon: Wind     },
+  { slug: "roteadores-redes", label: "Roteadores e Redes", desc: "Wi-Fi 6, mesh, repetidores e tudo para a rede da sua casa.",        Icon: Wifi     },
 ];
 
 const porQueConfiar = [
   {
     Icon: Search,
-    titulo: "Uso real, não só ficha técnica",
-    texto: "Nada de copiar descrição de loja. Testamos produtos na rotina de casa, cruzamos com avaliações reais e só então entram nos achadinhos.",
+    titulo: "Dados reais, não só ficha técnica",
+    texto: "Analisamos especificações, cruzamos com avaliações de compradores reais e só então publicamos. Nada inventado, nada de copiar descrição de loja.",
   },
   {
     Icon: BarChart3,
     titulo: "Comparativos lado a lado",
-    texto: "Colocamos produtos da mesma faixa para competir entre si. Você vê prós, contras e para quem é cada modelo antes de clicar no botão de compra.",
+    texto: "Colocamos produtos da mesma faixa para competir: conectividade, compatibilidade, instalação, suporte. Você vê prós e contras antes de decidir.",
   },
   {
     Icon: Target,
-    titulo: "Critérios claros e notas honestas",
-    texto: "Conforto, durabilidade, material, facilidade de limpar, custo por uso. Cada review segue a mesma régua para você comparar sem confusão.",
+    titulo: "Critérios técnicos e objetivos",
+    texto: "Conectividade, protocolo, latência, compatibilidade com assistentes, facilidade de configuração. Cada review segue a mesma régua.",
   },
   {
     Icon: ShieldCheck,
-    titulo: "Independência total",
-    texto: "Participamos de programas de afiliados de Amazon, Shopee e Mercado Livre, mas nenhuma marca paga para aparecer aqui. Se for ruim, a gente fala.",
+    titulo: "Independência editorial",
+    texto: "Participamos de programas de afiliados, mas nenhuma marca paga para aparecer aqui. Se o produto tem problema, a gente fala.",
   },
 ];
 
@@ -53,17 +53,17 @@ const metodologiaSteps = [
 ];
 
 const eParaVoce = [
-  "Quer montar ou atualizar a casa gastando bem, não só barato.",
-  "Gosta de entender o porquê de cada recomendação, não só ver um link de compra.",
-  "Odeia perder tempo pulando de vídeo em vídeo e review em review.",
-  "Topa pagar um pouco mais quando o produto realmente entrega mais.",
+  "Quer montar uma casa inteligente sem cair em armadilhas de compatibilidade.",
+  "Gosta de entender especificações antes de comprar, não só ver o preço.",
+  "Odeia perder tempo com produtos que não funcionam como prometido.",
+  "Topa investir mais quando o produto realmente entrega mais.",
 ];
 
 const naoEParaVoce = [
   "Só quer o produto mais barato, independente da qualidade.",
   "Prefere anúncios de marcas a reviews independentes.",
-  "Não se importa com material, conforto ou durabilidade.",
-  "Quer uma resposta mágica sem olhar 3 minutos de análise.",
+  "Não se importa com compatibilidade ou suporte pós-venda.",
+  "Quer uma resposta mágica sem olhar 3 minutos de análise técnica.",
 ];
 
 // ─── Dados do banco ──────────────────────────────────────────────────────────
@@ -101,16 +101,16 @@ export default async function HomePage() {
             {/* Coluna texto */}
             <div>
               <span className="inline-block text-xs font-sans font-bold text-brand-600 uppercase tracking-widest mb-5">
-                Blog de reviews para casa &amp; decoração
+                Reviews de Smart Home &amp; Tecnologia para Casa
               </span>
 
               <h1 className="font-serif font-bold text-cafe-800 leading-[1.15] mb-5">
-                Achadinhos testados e explicados: os melhores produtos para sua casa em 2026.
+                Os melhores produtos de casa inteligente, comparados para você decidir com segurança.
               </h1>
 
               <p className="text-base md:text-lg font-sans text-cafe-600 leading-relaxed mb-8 max-w-lg">
-                Comparativos detalhados, reviews honestos e links com desconto em Amazon,
-                Shopee e Mercado Livre para você não errar na compra.
+                Rankings imparciais, reviews técnicos e guias de compra de smart home,
+                automação residencial e tecnologia para casa.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3 mb-6">
@@ -118,53 +118,31 @@ export default async function HomePage() {
                   href="/reviews"
                   className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-lg font-sans font-semibold text-white text-base bg-brand-500 hover:bg-brand-600 transition-colors active:scale-[0.98]"
                 >
-                  Ver reviews por cômodo
+                  Ver reviews
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link
-                  href="/reviews"
+                  href="/categoria/smart-home"
                   className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-lg font-sans font-semibold text-base border-2 border-brand-500 text-brand-600 hover:bg-brand-100 transition-colors"
                 >
-                  Explorar achadinhos de hoje
+                  Explorar Smart Home
                 </Link>
               </div>
 
               <p className="text-xs font-sans text-cafe-500">
-                Curadoria da Elis, baseada em testes reais, centenas de reviews de
-                clientes e pesquisa de preço diária.
+                Reviews baseados em dados reais, especificações técnicas e avaliações de compradores.
               </p>
 
-              {/* Imagem WhatsApp — visível só no mobile, logo abaixo dos botões */}
-              <a
-                href="https://chat.whatsapp.com/DmZDfPASkJdCZo67uke9gv"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block mt-8 lg:hidden max-w-xs mx-auto hover:opacity-90 transition-opacity active:scale-[0.98]"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/grupo-whatsapp.png"
-                  alt="Entrar para o grupo VIP de achadinhos no WhatsApp"
-                  className="w-full rounded-2xl shadow-brand-md"
-                />
-              </a>
             </div>
 
-            {/* Coluna direita — imagem WhatsApp clicável (desktop) */}
+            {/* Coluna direita — hero image */}
             <div className="hidden lg:flex items-center justify-center">
-              <a
-                href="https://chat.whatsapp.com/DmZDfPASkJdCZo67uke9gv"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block max-w-sm w-full hover:opacity-90 transition-opacity hover:-translate-y-1 duration-300 active:scale-[0.98]"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/grupo-whatsapp.png"
-                  alt="Entrar para o grupo VIP de achadinhos no WhatsApp"
-                  className="w-full rounded-2xl shadow-brand-lg"
-                />
-              </a>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/hero.png"
+                alt="Casa inteligente com automação residencial"
+                className="w-full max-w-sm rounded-2xl shadow-brand-lg"
+              />
             </div>
 
           </div>
@@ -181,10 +159,10 @@ export default async function HomePage() {
               Explore por tema
             </span>
             <h2 className="font-serif font-bold text-cafe-800 mt-2">
-              Navegue pelos melhores achadinhos.
+              Explore por categoria de produto.
             </h2>
             <p className="text-sm font-sans text-cafe-500 mt-2 max-w-md mx-auto">
-              Escolha por cômodo e veja só o que realmente vale a pena comprar.
+              Escolha o tema e veja só o que realmente vale investir.
             </p>
           </div>
 
@@ -237,7 +215,7 @@ export default async function HomePage() {
               Nossa promessa
             </span>
             <h2 className="font-serif font-bold text-cafe-800 mt-2">
-              Por que você pode confiar nos achadinhos da Elis.
+              Por que você pode confiar nos reviews do Domus Digital.
             </h2>
           </div>
 
@@ -375,7 +353,7 @@ export default async function HomePage() {
               Transparência total
             </span>
             <h2 className="font-serif font-bold text-cafe-800 mt-2">
-              Como escolhemos o que entra nos achadinhos.
+              Como escolhemos o que entra nos reviews.
             </h2>
           </div>
 
@@ -416,7 +394,7 @@ export default async function HomePage() {
               Feito para você?
             </span>
             <h2 className="font-serif font-bold text-cafe-800 mt-2">
-              Pra quem o Achadinhos da Elis foi pensado.
+              Pra quem o Domus Digital foi pensado.
             </h2>
           </div>
 
@@ -467,34 +445,28 @@ export default async function HomePage() {
       </section>
 
       {/* ══════════════════════════════════════════════════════
-          SEÇÃO 7 — GRUPO WHATSAPP
+          SEÇÃO 7 — CTA FINAL
       ══════════════════════════════════════════════════════ */}
       <section className="py-16 bg-brand-500">
         <div className="container">
           <div className="max-w-xl mx-auto text-center">
             <span className="text-xs font-sans font-bold text-brand-100 uppercase tracking-widest mb-4 block">
-              Grupo secreto de promoções
+              Comece agora
             </span>
             <h2 className="font-serif font-bold text-white mb-3">
-              Receba só os achadinhos que valem a pena, sem spam.
+              Monte sua casa inteligente com as escolhas certas.
             </h2>
             <p className="text-sm font-sans text-white/80 mb-8">
-              Receba diversas promoções e cupons em um grupo exclusivo do WhatsApp.
+              Reviews imparciais, rankings atualizados e guias de compra para você não errar.
             </p>
 
-            <a
-              href="https://chat.whatsapp.com/DmZDfPASkJdCZo67uke9gv"
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              href="/reviews"
               className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl bg-white text-brand-700 font-sans font-bold text-base hover:bg-brand-50 active:scale-[0.98] transition-all shadow-md"
             >
-              Entrar para o grupo de achadinhos
-            </a>
-
-            <p className="text-xs font-sans text-white/60 mt-5">
-              Não fazemos spam. Divulgamos as melhores ofertas em um grupo privado,
-              respeitando sua privacidade conforme a LGPD.
-            </p>
+              Ver todos os reviews
+              <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
         </div>
       </section>

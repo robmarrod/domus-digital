@@ -1,6 +1,14 @@
-# Achadinhos da Elis — Contexto do Projeto
+# Domus Digital — Contexto do Projeto
 
-Blog de reviews de casa & decoração com painel admin, geração de conteúdo via IA e monetização por afiliados.
+Blog de reviews de **Casa Inteligente / Smart Home / Tech para Casa** com painel admin, geração de conteúdo via IA e monetização por afiliados.
+
+- **Nome:** Domus Digital
+- **Slogan:** Tecnologia inteligente para sua casa
+- **Nicho:** Smart Home, automação residencial, tecnologia para casa
+- **Cor principal (brand):** `#00B4C8` teal/ciano
+- **Cor accent:** `#E84444` vermelho coral
+- **Admin:** usuário `admin` / senha `domus2024`
+- **Deploy:** `https://domusdigital.com.br`
 
 ## Stack
 
