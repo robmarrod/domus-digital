@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 220" fill="none">
+  <!-- House shape -->
+  <path d="M50 100 L50 148 Q50 154 56 154 L144 154 Q150 154 150 148 L150 100" stroke="#00B4C8" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Roof -->
+  <path d="M30 96 L100 42 L170 96" stroke="#00B4C8" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- WiFi dot -->
+  <circle cx="100" cy="138" r="5" fill="#00B4C8"/>
+  <!-- WiFi arc 1 -->
+  <path d="M82 122 Q100 108 118 122" stroke="#00B4C8" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+  <!-- WiFi arc 2 -->
+  <path d="M64 108 Q100 84 136 108" stroke="#00B4C8" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+  <!-- Glow dot -->
+  <circle cx="150" cy="60" r="8" fill="#00D4E8" opacity="0.55"/>
+  <circle cx="150" cy="60" r="4" fill="white" opacity="0.9"/>
+
+  <!-- DOMUS -->
+  <text x="100" y="182" text-anchor="middle" font-family="'Arial Black', 'Helvetica Neue', Arial, sans-serif" font-weight="900" font-size="36" fill="#E84444" letter-spacing="2">DOMUS</text>
+  <!-- DIGITAL -->
+  <text x="100" y="213" text-anchor="middle" font-family="'Arial Black', 'Helvetica Neue', Arial, sans-serif" font-weight="900" font-size="36" fill="#00B4C8" letter-spacing="2">DIGITAL</text>
+  <!-- Sparkle -->
+  <path d="M172 200 L174 193 L176 200 L183 202 L176 204 L174 211 L172 204 L165 202 Z" fill="#00B4C8" opacity="0.85"/>
+</svg>
