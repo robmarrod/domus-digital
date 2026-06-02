@@ -1,0 +1,37 @@
+name: 🧪 CI — Verificar build
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - develop
+
+jobs:
+  build-check:
+    name: Verificar build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: ✅ Checkout
+        uses: actions/checkout@v4
+
+      - name: 🟢 Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: 📦 Instalar dependências
+        run: npm ci
+
+      - name: 🔍 Lint
+        run: npm run lint --if-present
+
+      - name: 🔨 Build
+        run: npm run build
+        env:
+          DATABASE_URL: file:./prisma/ci.db
+          NEXT_PUBLIC_SITE_URL: http://localhost:3000
+          NEXT_PUBLIC_SITE_NAME: "Achadinhos da Elis"

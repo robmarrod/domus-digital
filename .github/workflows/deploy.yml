@@ -1,0 +1,48 @@
+name: 🚀 Deploy para Hostinger VPS
+
+on:
+  push:
+    branches:
+      - main   # dispara automaticamente a cada push na main
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: ✅ Checkout do código
+        uses: actions/checkout@v4
+
+      - name: 🟢 Configurar Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: 📦 Instalar dependências
+        run: npm ci
+
+      - name: 🔨 Build de produção
+        run: npm run build
+        env:
+          DATABASE_URL: file:./prisma/prod.db
+          NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
+          NEXT_PUBLIC_SITE_NAME: "Achadinhos da Elis"
+
+      - name: 🚢 Deploy via SSH para o VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            cd /var/www/achadinhos
+            git pull origin main
+            npm ci --omit=dev
+            node_modules/.bin/prisma migrate deploy
+            npm run build
+            pm2 restart achadinhos || pm2 start npm --name "achadinhos" -- start
+            pm2 save
+            echo "✅ Deploy concluído com sucesso!"

@@ -1,0 +1,101 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x", "debian-openssl-1.1.x", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Post {
+  id              String     @id @default(cuid())
+  slug            String     @unique
+  titulo          String
+  resumo          String
+  conteudoJson    String     // JSON stringificado (SQLite não tem tipo Json nativo)
+  tipo            String     // "REVIEW" | "GUIA"
+  categoria       String
+  palavraPrimaria String
+  metaTitle       String
+  metaDescription String
+  status          String     @default("DRAFT") // "DRAFT" | "REVIEW" | "PUBLISHED" | "SCHEDULED" | "ARCHIVED"
+  publishedAt     DateTime?
+  scheduledAt     DateTime?
+  linksJson       String?    // JSON: [{palavra, url, tipo: "interno"|"externo", novaAba: bool}]
+  parentPostId    String?    // ID do post ranking pai (para posts individuais de produto)
+  imagemUrl       String?    // URL da imagem de capa do post
+  urlShopee       String?    // Link de compra direto — Shopee
+  urlMercadoLivre String?    // Link de compra direto — Mercado Livre
+  urlAmazon       String?    // Link de compra direto — Amazon
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  postProducts    PostProduct[]
+}
+
+model Product {
+  id               String   @id @default(cuid())
+  slug             String   @unique
+  nome             String
+  descricaoCurta   String
+  categoria        String
+  imagemUrl        String?
+  marca            String?
+  precoReferencial Float?
+
+  idShopee         String?
+  idMercadoLivre   String?
+  idAmazon         String?
+
+  urlShopee        String?
+  urlMercadoLivre  String?
+  urlAmazon        String?
+
+  prosDefault      String?
+  contrasDefault   String?
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  postProducts     PostProduct[]
+}
+
+model PostProduct {
+  id              String   @id @default(cuid())
+  postId          String
+  productId       String
+  posicao         Int
+  rotuloDestaque  String?
+
+  resumoCurto     String?
+  pros            String?
+  contras         String?
+  indicadoPara    String?
+
+  post    Post    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, posicao])
+}
+
+model AISettings {
+  id              String   @id @default(cuid())
+  provider        String   @default("anthropic") // "anthropic" | "openai" | "gemini"
+  apiKey          String?
+  model           String?  // ex: "claude-haiku-4-5-20251001", "gpt-4o-mini", "gemini-1.5-flash"
+  ativo           Boolean  @default(false)
+  promptRanking   String?  // Prompt customizado para post ranking (todos os produtos)
+  promptIndividual String? // Prompt customizado para post individual de 1 produto
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model AffiliateSettings {
+  id                 String   @id @default(cuid())
+  amazonTag          String?
+  shopeeParam        String?
+  mercadoLivreParam  String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
