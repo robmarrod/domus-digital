@@ -30,7 +30,7 @@ export function SiteHeader() {
           <Link href="/" className="shrink-0 group">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/logo-horizontal.svg"
+              src="/logo-domus-horizontal.png"
               alt="Domus Digital"
               className="h-12 w-auto transition-transform group-hover:scale-[1.02]"
             />
