@@ -1,7 +1,8 @@
 /**
  * server.js — Entry point customizado para Hostinger.
- * 1. Roda as migrations SQL diretamente (idempotente).
- * 2. Inicia o Next.js normalmente.
+ * 1. Cria o diretório do banco SQLite se não existir.
+ * 2. Roda prisma migrate deploy (cria/atualiza todas as tabelas).
+ * 3. Inicia o Next.js normalmente.
  *
  * Funciona independente de como a Hostinger inicia o processo
  * (npm start, node server.js, etc.).
@@ -9,61 +10,49 @@
 
 const { createServer } = require("http");
 const { parse } = require("url");
+const { spawnSync } = require("child_process");
+const { mkdirSync, existsSync } = require("fs");
+const path = require("path");
 const next = require("next");
 
 const dev = process.env.NODE_ENV !== "production";
 const port = parseInt(process.env.PORT || "3000", 10);
 
-// ── 1. Migrations diretas via Prisma ─────────────────────────────────────────
+// ── 1. Garante que o diretório do banco existe ────────────────────────────────
 
-async function ensureSchema() {
-  try {
-    // Importa o PrismaClient já gerado durante o build
-    const { PrismaClient } = require("@prisma/client");
-    const prisma = new PrismaClient();
-
-    const statements = [
-      `ALTER TABLE "Post" ADD COLUMN "scheduledAt" DATETIME`,
-      `ALTER TABLE "Post" ADD COLUMN "linksJson"    TEXT`,
-      `ALTER TABLE "Post" ADD COLUMN "parentPostId" TEXT`,
-      `CREATE TABLE IF NOT EXISTS "AISettings" (
-         "id"       TEXT NOT NULL PRIMARY KEY,
-         "provider" TEXT NOT NULL DEFAULT 'anthropic',
-         "apiKey"   TEXT,
-         "model"    TEXT,
-         "ativo"    BOOLEAN NOT NULL DEFAULT false,
-         "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-         "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-       )`,
-      `ALTER TABLE "AISettings" ADD COLUMN "promptRanking"    TEXT`,
-      `ALTER TABLE "AISettings" ADD COLUMN "promptIndividual" TEXT`,
-      `ALTER TABLE "Post"       ADD COLUMN "imagemUrl"        TEXT`,
-    ];
-
-    for (const sql of statements) {
-      try {
-        await prisma.$executeRawUnsafe(sql);
-      } catch (e) {
-        const msg = e.message || "";
-        // "duplicate column name" = coluna já existe → OK, ignorar
-        if (!msg.includes("duplicate column") && !msg.includes("already exists")) {
-          console.warn("[server.js] SQL aviso:", msg.slice(0, 120));
-        }
-      }
-    }
-
-    await prisma.$disconnect();
-    console.log("[server.js] ✅ Schema verificado.");
-  } catch (err) {
-    // Nunca bloqueia o startup
-    console.warn("[server.js] ⚠ ensureSchema falhou (não crítico):", err.message);
+function ensureDbDir() {
+  const dbUrl = process.env.DATABASE_URL || "";
+  if (!dbUrl.startsWith("file:")) return;
+  const filePath = dbUrl.replace("file:", "");
+  const dir = filePath.substring(0, filePath.lastIndexOf("/"));
+  if (dir && !existsSync(dir)) {
+    mkdirSync(dir, { recursive: true });
+    console.log("[server.js] ✅ Diretório do banco criado:", dir);
   }
 }
 
-// ── 2. Inicia o Next.js ───────────────────────────────────────────────────────
+// ── 2. Roda prisma migrate deploy ─────────────────────────────────────────────
+
+function runMigrations() {
+  console.log("[server.js] 🔄 Rodando prisma migrate deploy...");
+  const prismaBin = path.join(__dirname, "node_modules", ".bin", "prisma");
+  const result = spawnSync(prismaBin, ["migrate", "deploy"], {
+    stdio: "inherit",
+    env: { ...process.env },
+    timeout: 60000,
+  });
+  if (result.status === 0) {
+    console.log("[server.js] ✅ Migrations aplicadas.");
+  } else {
+    console.warn("[server.js] ⚠ prisma migrate deploy retornou código:", result.status, "— continuando...");
+  }
+}
+
+// ── 3. Inicia o Next.js ───────────────────────────────────────────────────────
 
 async function main() {
-  await ensureSchema();
+  ensureDbDir();
+  runMigrations();
 
   const app = next({ dev, port });
   const handle = app.getRequestHandler();
