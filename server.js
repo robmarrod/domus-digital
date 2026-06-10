@@ -13,6 +13,13 @@ const { parse } = require("url");
 const { spawnSync } = require("child_process");
 const { mkdirSync, existsSync } = require("fs");
 const path = require("path");
+
+// ── 0. Normaliza DATABASE_URL — some painéis removem o prefixo "file:" ────────
+if (process.env.DATABASE_URL && !process.env.DATABASE_URL.startsWith("file:")) {
+  process.env.DATABASE_URL = "file:" + process.env.DATABASE_URL;
+  console.log("[server.js] DATABASE_URL normalizado para:", process.env.DATABASE_URL);
+}
+
 const next = require("next");
 
 const dev = process.env.NODE_ENV !== "production";

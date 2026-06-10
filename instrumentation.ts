@@ -7,6 +7,11 @@ export async function register() {
   // Só roda no Node.js runtime (não no Edge runtime)
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
 
+  // Normaliza DATABASE_URL — alguns painéis removem o prefixo "file:"
+  if (process.env.DATABASE_URL && !process.env.DATABASE_URL.startsWith("file:")) {
+    process.env.DATABASE_URL = "file:" + process.env.DATABASE_URL;
+  }
+
   try {
     const { prisma } = await import("./lib/prisma");
 
