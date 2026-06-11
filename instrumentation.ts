@@ -12,6 +12,28 @@ export async function register() {
     process.env.DATABASE_URL = "file:" + process.env.DATABASE_URL;
   }
 
+  // Roda prisma migrate deploy para criar/atualizar todas as tabelas
+  try {
+    const { spawnSync } = await import("child_process");
+    const path = await import("path");
+    const prismaBin = path.join(process.cwd(), "node_modules", ".bin", "prisma");
+    console.log("[instrumentation] 🔄 Rodando prisma migrate deploy...");
+    const result = spawnSync(prismaBin, ["migrate", "deploy"], {
+      stdio: "pipe",
+      env: { ...process.env },
+      timeout: 60000,
+    });
+    const out = result.stdout?.toString() || "";
+    const err = result.stderr?.toString() || "";
+    if (result.status === 0) {
+      console.log("[instrumentation] ✅ Migrations aplicadas.", out.slice(0, 200));
+    } else {
+      console.error("[instrumentation] ⚠ migrate deploy código:", result.status, err.slice(0, 300));
+    }
+  } catch (e: unknown) {
+    console.error("[instrumentation] Falha ao rodar migrations:", (e as Error).message);
+  }
+
   try {
     const { prisma } = await import("./lib/prisma");
 
