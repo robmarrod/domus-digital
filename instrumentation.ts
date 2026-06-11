@@ -14,8 +14,10 @@ export async function register() {
 
   // Roda prisma migrate deploy para criar/atualizar todas as tabelas
   try {
-    const { spawnSync } = await import("child_process");
-    const path = await import("path");
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { spawnSync } = require("child_process") as typeof import("child_process");
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const path = require("path") as typeof import("path");
     const prismaBin = path.join(process.cwd(), "node_modules", ".bin", "prisma");
     console.log("[instrumentation] 🔄 Rodando prisma migrate deploy...");
     const result = spawnSync(prismaBin, ["migrate", "deploy"], {
