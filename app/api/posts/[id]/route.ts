@@ -17,7 +17,7 @@ const updatePostSchema = z.object({
   slug: z.string().min(1).optional(),
   palavraPrimaria: z.string().optional(),
   categoria: z.string().min(1).optional(),
-  tipo: z.preprocess((v) => (v === "RANKING" ? "REVIEW" : v), z.enum(["REVIEW", "GUIA"]).optional()),
+  tipo: z.preprocess((v) => (v === "RANKING" ? "REVIEW" : v), z.enum(["REVIEW", "GUIA", "PRODUTO"]).optional()),
   metaTitle: z.string().optional(),
   metaDescription: z.string().optional(),
   resumo: z.string().optional(),

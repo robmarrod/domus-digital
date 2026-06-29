@@ -53,6 +53,31 @@ export function ProductForm({ productId, defaultValues }: ProductFormProps) {
     defaultValues?.descricaoCurta ?? ""
   );
   const [imagemUrl, setImagemUrl] = useState(defaultValues?.imagemUrl ?? "");
+  const [uploadando, setUploadando] = useState(false);
+
+  async function handleUploadImagem(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadando(true)
+    const fd = new FormData()
+    fd.append('file', file)
+    fd.append('tipo', 'produtos')
+    try {
+      const res = await fetch('/api/upload-imagem', { method: 'POST', body: fd })
+      const data = await res.json()
+      if (data.ok) {
+        setImagemUrl(data.url)
+        toast({ title: '✅ Imagem enviada com sucesso!' })
+      } else {
+        toast({ title: '❌ Erro ao enviar imagem', description: data.error, variant: 'destructive' })
+      }
+    } catch {
+      toast({ title: '❌ Falha no upload', variant: 'destructive' })
+    } finally {
+      setUploadando(false)
+      e.target.value = ''
+    }
+  }
   const [precoReferencial, setPrecoReferencial] = useState(
     defaultValues?.precoReferencial?.toString() ?? ""
   );
@@ -206,13 +231,29 @@ export function ProductForm({ productId, defaultValues }: ProductFormProps) {
               />
             </div>
             <div className="md:col-span-2">
-              <Label htmlFor="imagemUrl">URL da imagem</Label>
-              <Input
-                id="imagemUrl"
-                value={imagemUrl}
-                onChange={(e) => setImagemUrl(e.target.value)}
-                placeholder="https://..."
-              />
+              <Label>Imagem do produto</Label>
+              <div className="flex gap-3 items-start mt-1">
+                <div className="flex-1">
+                  <Input
+                    id="imagemUrl"
+                    value={imagemUrl}
+                    onChange={(e) => setImagemUrl(e.target.value)}
+                    placeholder="https://... ou use o botão para subir"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">Redimensionada automaticamente para 800×800 px, formato WebP.</p>
+                </div>
+                <label className={`cursor-pointer shrink-0 inline-flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${uploadando ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-300'}`}>
+                  {uploadando ? '⏳ Enviando...' : '📷 Subir imagem'}
+                  <input type="file" accept="image/*" className="hidden" disabled={uploadando} onChange={handleUploadImagem} />
+                </label>
+              </div>
+              {imagemUrl && (
+                <div className="mt-3 flex items-center gap-3">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={imagemUrl} alt="Preview" className="w-20 h-20 object-cover rounded-lg border" onError={(e) => (e.currentTarget.style.display = 'none')} />
+                  <span className="text-xs text-gray-400 break-all">{imagemUrl}</span>
+                </div>
+              )}
             </div>
           </div>
         </CardContent>

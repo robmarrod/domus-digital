@@ -17,8 +17,8 @@ const createPostSchema = z.object({
   slug: z.string().min(1),
   palavraPrimaria: z.string().optional().default(""),
   categoria: z.string().min(1),
-  // "RANKING" é alias para "REVIEW" — compatibilidade com geração via IA
-  tipo: z.preprocess((v) => (v === "RANKING" ? "REVIEW" : v), z.enum(["REVIEW", "GUIA"])),
+  // "RANKING" é alias para "REVIEW"; "PRODUTO" para posts individuais
+  tipo: z.preprocess((v) => (v === "RANKING" ? "REVIEW" : v), z.enum(["REVIEW", "GUIA", "PRODUTO"])),
   metaTitle: z.string().optional().default(""),
   metaDescription: z.string().optional().default(""),
   resumo: z.string().optional().default(""),

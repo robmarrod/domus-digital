@@ -76,7 +76,7 @@ export function ReviewCard({
   featured = false,
 }: ReviewCardProps) {
   const gradient  = getGradient(categoria);
-  const tipoLabel = tipo === "REVIEW" ? "Review" : "Guia";
+  const tipoLabel = tipo === "PRODUTO" ? "Produto" : tipo === "REVIEW" ? "Review" : "Guia";
 
   if (featured) {
     return (

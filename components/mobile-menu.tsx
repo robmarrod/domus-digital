@@ -6,15 +6,16 @@ import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 
 const navLinks = [
-  { href: "/",                            label: "Home"          },
-  { href: "/reviews",                     label: "Reviews"       },
-  { href: "/categoria/smart-home",        label: "Smart Home"    },
-  { href: "/categoria/iluminacao",        label: "Iluminação"    },
-  { href: "/categoria/seguranca",         label: "Segurança"     },
-  { href: "/categoria/audio-e-video",     label: "Áudio e Vídeo" },
-  { href: "/categoria/climatizacao",      label: "Climatização"  },
-  { href: "/metodologia",                 label: "Metodologia"   },
-  { href: "/contato",                     label: "Contato"       },
+  { href: "/",                      label: "Home"        },
+  { href: "/reviews",               label: "Reviews"     },
+  { href: "/produtos",              label: "Produtos"    },
+  { href: "/categoria/sala",        label: "Sala"        },
+  { href: "/categoria/quarto",      label: "Quarto"      },
+  { href: "/categoria/cozinha",     label: "Cozinha"     },
+  { href: "/categoria/varanda",     label: "Varanda"     },
+  { href: "/categoria/organizacao", label: "Organização" },
+  { href: "/metodologia",           label: "Metodologia" },
+  { href: "/contato",               label: "Contato"     },
 ];
 
 export function MobileMenu() {
@@ -75,7 +76,7 @@ export function MobileMenu() {
               onClick={() => setOpen(false)}
               className="flex items-center justify-center w-full py-3.5 px-6 bg-brand-500 text-white font-sans font-bold rounded-xl hover:bg-brand-600 transition-colors"
             >
-              Ver reviews
+              Ver reviews de hoje
             </Link>
           </div>
         </nav>

@@ -81,6 +81,33 @@ export function PostForm({ postId, defaultValues, products }: PostFormProps) {
   const [resumo, setResumo] = useState(defaultValues?.resumo ?? "");
   const [imagemUrl, setImagemUrl] = useState(defaultValues?.imagemUrl ?? "");
   const [imagemUrlError, setImagemUrlError] = useState(false);
+  const [uploadandoCapa, setUploadandoCapa] = useState(false);
+
+  async function handleUploadCapa(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadandoCapa(true)
+    const fd = new FormData()
+    fd.append('file', file)
+    fd.append('tipo', 'posts')
+    try {
+      const res = await fetch('/api/upload-imagem', { method: 'POST', body: fd })
+      const data = await res.json()
+      if (data.ok) {
+        setImagemUrl(data.url)
+        setImagemUrlError(false)
+        toast({ title: '✅ Imagem de capa enviada!' })
+      } else {
+        toast({ title: '❌ Erro ao enviar imagem', description: data.error, variant: 'destructive' })
+      }
+    } catch {
+      toast({ title: '❌ Falha no upload', variant: 'destructive' })
+    } finally {
+      setUploadandoCapa(false)
+      e.target.value = ''
+    }
+  }
+
   const [urlShopee, setUrlShopee] = useState(defaultValues?.urlShopee ?? "");
   const [urlMercadoLivre, setUrlMercadoLivre] = useState(defaultValues?.urlMercadoLivre ?? "");
   const [urlAmazon, setUrlAmazon] = useState(defaultValues?.urlAmazon ?? "");
@@ -493,12 +520,19 @@ export function PostForm({ postId, defaultValues, products }: PostFormProps) {
                 />
               )}
               <div className="flex-1 space-y-1">
-                <Input
-                  id="imagemUrl"
-                  value={imagemUrl}
-                  onChange={(e) => { setImagemUrl(e.target.value); setImagemUrlError(false); }}
-                  placeholder="https://... (URL da imagem de capa)"
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id="imagemUrl"
+                    value={imagemUrl}
+                    onChange={(e) => { setImagemUrl(e.target.value); setImagemUrlError(false); }}
+                    placeholder="https://... ou use o botão para subir"
+                  />
+                  <label className={`cursor-pointer shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm font-medium transition-colors whitespace-nowrap ${uploadandoCapa ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-300'}`}>
+                    {uploadandoCapa ? '⏳' : '📷'} {uploadandoCapa ? 'Enviando...' : 'Subir imagem'}
+                    <input type="file" accept="image/*" className="hidden" disabled={uploadandoCapa} onChange={handleUploadCapa} />
+                  </label>
+                </div>
+                <p className="text-xs text-gray-400">Redimensionada automaticamente para 1200×630 px, formato WebP.</p>
                 {imagemUrl && (
                   <button
                     type="button"

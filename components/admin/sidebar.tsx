@@ -10,6 +10,7 @@ import {
   Home,
   ChevronRight,
   Bot,
+  ClipboardList,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -30,6 +31,12 @@ const navItems = [
     href: "/admin/produtos",
     label: "Produtos",
     icon: Package,
+    exact: false,
+  },
+  {
+    href: "/admin/plano-editorial",
+    label: "Plano Editorial",
+    icon: ClipboardList,
     exact: false,
   },
   {

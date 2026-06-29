@@ -19,24 +19,23 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "Domus Digital – Reviews de Tecnologia para Casa Inteligente",
-    template: "%s – Domus Digital",
+    default: "Achadinhos da Elis – Melhores Produtos para Casa e Decoração",
+    template: "%s – Achadinhos da Elis",
   },
   description:
-    "Reviews e rankings dos melhores produtos de smart home, automação residencial e tecnologia para casa. Comparamos para você decidir melhor.",
+    "Curadoria imparcial dos melhores produtos para casa e decoração. Reviews completos, rankings e guias para você tomar a melhor decisão de compra.",
   keywords: [
-    "smart home",
-    "casa inteligente",
-    "automação residencial",
+    "produtos para casa",
+    "decoração",
     "reviews",
     "melhores produtos",
-    "tecnologia para casa",
+    "casa e decoração",
     "afiliados",
   ],
   openGraph: {
     type: "website",
     locale: "pt_BR",
-    siteName: "Domus Digital",
+    siteName: "Achadinhos da Elis",
   },
   robots: {
     index: true,
@@ -51,6 +50,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" className={`${poppins.variable} ${inter.variable}`}>
+      {/* GA4: adicionar aqui quando criar a propriedade do Domus Digital no Google Analytics */}
       <body
         className="min-h-screen font-sans antialiased"
         style={{ backgroundColor: "#F9F5EC" }}

@@ -5,17 +5,19 @@ import { ReviewCard } from "@/components/review-card";
 import { prisma } from "@/lib/prisma";
 
 export const metadata: Metadata = {
-  title: "Rankings e Reviews",
+  title: "Reviews de Produtos",
   description:
-    "Rankings comparativos e reviews completos dos melhores produtos para casa e decoração do Domus Digital.",
+    "Reviews individuais e detalhados de cada produto testado pelo Domus Digital. Análise completa, prós, contras e onde comprar.",
 };
 
-async function getAllPosts() {
+async function getProdutoPosts() {
   return prisma.post.findMany({
     where: {
       status: "PUBLISHED",
-      tipo: "REVIEW",
-      parentPostId: null,        // apenas posts ranking (sem parentPostId = são os REIs)
+      OR: [
+        { tipo: "PRODUTO" },                        // posts marcados como PRODUTO
+        { tipo: "REVIEW", parentPostId: { not: null } }, // posts legados com parentPostId
+      ],
     },
     orderBy: { publishedAt: "desc" },
     select: {
@@ -25,19 +27,19 @@ async function getAllPosts() {
   });
 }
 
-export default async function ReviewsPage() {
-  const posts = await getAllPosts();
+export default async function ProdutosPage() {
+  const posts = await getProdutoPosts();
 
   return (
     <div className="container py-12">
       <div className="mb-8">
         <h1 className="font-serif text-3xl font-bold text-gray-900 mb-2">
-          Rankings & Reviews
+          Reviews de Produtos
         </h1>
         <p className="text-gray-600">
           {posts.length}{" "}
-          {posts.length === 1 ? "ranking publicado" : "rankings publicados"} —
-          comparamos os melhores produtos para você decidir com segurança.
+          {posts.length === 1 ? "produto analisado" : "produtos analisados"} —
+          reviews completos com prós, contras e onde comprar pelo melhor preço.
         </p>
       </div>
 
@@ -48,7 +50,7 @@ export default async function ReviewsPage() {
             <span className="block h-2 w-2 rounded-full bg-brand-400" />
             <span className="block h-px w-12 bg-nude-300" />
           </div>
-          <p className="text-lg font-serif font-medium text-cafe-600">Nenhum review publicado ainda.</p>
+          <p className="text-lg font-serif font-medium text-cafe-600">Nenhum review de produto publicado ainda.</p>
           <p className="text-sm font-sans mt-2">Volte em breve!</p>
         </div>
       ) : (
