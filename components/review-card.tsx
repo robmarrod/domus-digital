@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Calendar, ArrowRight } from "lucide-react";
 import { formatDate } from "@/lib/utils";
+import { proxyImg } from "@/lib/imagem-proxy";
 
 interface ReviewCardProps {
   slug: string;
@@ -86,14 +87,18 @@ export function ReviewCard({
           {/* Imagem ou placeholder */}
           <div className="relative">
             {imagemUrl ? (
-              <img
-                src={imagemUrl}
-                alt={titulo}
-                className="h-52 w-full object-cover"
-                loading="lazy"
-              />
+              <div className="aspect-[4/3] bg-white overflow-hidden">
+                <img
+                  src={proxyImg(imagemUrl)}
+                  alt={titulo}
+                  className="w-full h-full object-contain"
+                  loading="lazy"
+                />
+              </div>
             ) : (
-              <ImagePlaceholder categoria={categoria} gradient={gradient} height="h-52" />
+              <div className="aspect-[4/3]">
+                <ImagePlaceholder categoria={categoria} gradient={gradient} height="h-full" />
+              </div>
             )}
             {/* Badges sobrepostos */}
             <div className="absolute top-4 left-4 flex gap-2">
@@ -137,14 +142,18 @@ export function ReviewCard({
         {/* Imagem ou placeholder */}
         <div className="relative">
           {imagemUrl ? (
-            <img
-              src={imagemUrl}
-              alt={titulo}
-              className="h-36 w-full object-cover"
-              loading="lazy"
-            />
+            <div className="aspect-[4/3] bg-white overflow-hidden">
+              <img
+                src={proxyImg(imagemUrl)}
+                alt={titulo}
+                className="w-full h-full object-contain"
+                loading="lazy"
+              />
+            </div>
           ) : (
-            <ImagePlaceholder categoria={categoria} gradient={gradient} height="h-36" />
+            <div className="aspect-[4/3]">
+              <ImagePlaceholder categoria={categoria} gradient={gradient} height="h-full" />
+            </div>
           )}
           <div className="absolute top-3 left-3">
             <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-sans font-bold bg-brand-500 text-white uppercase tracking-wide">

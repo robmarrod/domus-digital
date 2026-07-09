@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import type { Metadata } from "next";
-import Image from "next/image";
+import { proxyImg } from "@/lib/imagem-proxy";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronRight } from "lucide-react";
@@ -162,14 +162,6 @@ export default async function ReviewPage({ params }: PageProps) {
           {/* ── COLUNA PRINCIPAL ── */}
           <main className="flex-1 min-w-0">
 
-            {/* Capa */}
-            {post.imagemUrl && (
-              <div className="mb-6 rounded-2xl overflow-hidden">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={post.imagemUrl} alt={post.titulo} className="w-full max-h-[380px] object-cover" />
-              </div>
-            )}
-
             {/* Cabeçalho */}
             <header className="mb-6 bg-white rounded-2xl p-6 md:p-8 border border-nude-400 shadow-sm">
               <div className="flex items-center gap-2 mb-3">
@@ -191,78 +183,64 @@ export default async function ReviewPage({ params }: PageProps) {
               )}
             </header>
 
-            {/* ── TABELA RÁPIDA DE RANKING ── */}
-            {hasProducts && (
-              <section id="ranking" className="mb-8 bg-white rounded-2xl border border-nude-400 shadow-sm overflow-hidden">
-                <div className="px-5 py-4 border-b border-nude-300 flex items-center justify-between">
-                  <h2 className="font-serif text-lg font-bold text-cafe-800">Ranking Completo</h2>
-                  <span className="text-xs text-cafe-400">{post.postProducts.length} produtos</span>
-                </div>
-                <div className="divide-y divide-nude-200">
-                  {post.postProducts.map((pp) => {
-                    const buyLink = firstBuyUrl(pp.product);
-                    return (
-                      <div key={pp.id} className="flex items-center gap-3 px-4 py-3 hover:bg-nude-100 transition-colors">
-                        {/* Posição */}
-                        <span className="w-7 h-7 rounded-full bg-nude-300 text-cafe-600 text-xs font-bold flex items-center justify-center flex-shrink-0">
-                          {pp.posicao}
-                        </span>
-
-                        {/* Imagem */}
-                        {pp.product.imagemUrl ? (
-                          <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
-                            <Image
-                              src={pp.product.imagemUrl}
-                              alt={pp.product.nome}
-                              fill
-                              className="object-cover"
-                              sizes="48px"
-                            />
+            {/* ── TOP 3 DESTAQUES ── */}
+            {(() => {
+              const top3 = post.postProducts
+                .filter((pp) => pp.rotuloDestaque && pp.rotuloDestaque !== "__none__")
+                .slice(0, 3);
+              if (top3.length === 0) return null;
+              const rotuloStyle: Record<string, { bg: string; text: string; label: string }> = {
+                "NOSSA ESCOLHA":          { bg: "bg-brand-500", text: "text-white", label: "Nossa Escolha" },
+                "MAIOR DESEMPENHO":       { bg: "bg-yellow-400", text: "text-yellow-900", label: "Maior Desempenho" },
+                "CUSTO-BENEFÍCIO":        { bg: "bg-emerald-500", text: "text-white", label: "Custo-Benefício" },
+                "MAIS POPULAR":           { bg: "bg-blue-500", text: "text-white", label: "Mais Popular" },
+                "MELHOR PARA INICIANTES": { bg: "bg-purple-500", text: "text-white", label: "Melhor para Iniciantes" },
+              };
+              return (
+                <section className="mb-8">
+                  <h2 className="font-serif text-xl font-bold text-cafe-800 mb-4">Produtos em Destaque</h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {top3.map((pp) => {
+                      const estilo = rotuloStyle[pp.rotuloDestaque ?? ""] ?? { bg: "bg-gray-500", text: "text-white", label: pp.rotuloDestaque };
+                      const buyLink = firstBuyUrl(pp.product);
+                      return (
+                        <div key={pp.id} className="bg-white rounded-2xl border border-nude-400 shadow-sm overflow-hidden flex flex-col">
+                          <div className={`${estilo.bg} ${estilo.text} text-xs font-bold text-center py-1.5 px-3`}>
+                            {estilo.label}
                           </div>
-                        ) : (
-                          <div className="w-12 h-12 rounded-lg bg-nude-300 flex items-center justify-center flex-shrink-0">
-                            <span className="text-xl">🏠</span>
+                          <div className="flex gap-3 p-3 flex-1">
+                            {pp.product.imagemUrl ? (
+                              <div className="w-16 h-16 rounded-lg overflow-hidden bg-white border border-nude-200 flex-shrink-0">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={proxyImg(pp.product.imagemUrl)} alt={pp.product.nome} className="w-full h-full object-contain" />
+                              </div>
+                            ) : (
+                              <div className="w-16 h-16 rounded-lg bg-nude-200 flex items-center justify-center flex-shrink-0 text-2xl">🏠</div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <a href={`#produto-${pp.posicao}`} className="text-xs font-semibold text-cafe-800 hover:text-brand-600 line-clamp-2 leading-snug">
+                                {pp.product.nome}
+                              </a>
+                              {pp.resumoCurto && (
+                                <p className="text-xs text-cafe-500 mt-1 line-clamp-2 leading-snug">{pp.resumoCurto}</p>
+                              )}
+                            </div>
                           </div>
-                        )}
-
-                        {/* Nome */}
-                        <div className="flex-1 min-w-0">
-                          <a
-                            href={`#produto-${pp.posicao}`}
-                            className="text-sm font-medium text-cafe-800 hover:text-brand-600 transition-colors line-clamp-1"
-                          >
-                            {pp.product.nome}
-                          </a>
-                          {pp.rotuloDestaque && pp.rotuloDestaque !== "__none__" && (
-                            <span className="text-xs text-brand-600 font-semibold">{pp.rotuloDestaque}</span>
-                          )}
-                        </div>
-
-                        {/* Botões */}
-                        <div className="flex items-center gap-2 flex-shrink-0">
                           {buyLink && (
-                            <a
-                              href={buyLink.url}
-                              target="_blank"
-                              rel="nofollow noopener"
-                              className="text-xs bg-brand-500 text-white px-3 py-1.5 rounded-lg font-semibold hover:bg-brand-600 transition-colors whitespace-nowrap"
-                            >
-                              Ver preço
-                            </a>
+                            <div className="px-3 pb-3">
+                              <a href={buyLink.url} target="_blank" rel="nofollow noopener"
+                                className="block w-full text-center text-xs bg-brand-500 hover:bg-brand-600 text-white font-semibold py-2 rounded-lg transition-colors">
+                                Ver preço →
+                              </a>
+                            </div>
                           )}
-                          <a
-                            href={`#produto-${pp.posicao}`}
-                            className="text-xs text-brand-500 hover:underline whitespace-nowrap hidden sm:block"
-                          >
-                            Ver detalhes
-                          </a>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </section>
-            )}
+                      );
+                    })}
+                  </div>
+                </section>
+              );
+            })()}
 
             {/* Aviso editorial */}
             <div className="flex items-start gap-3 bg-brand-50 border border-brand-200 rounded-xl p-4 mb-8 text-sm">
@@ -280,6 +258,57 @@ export default async function ReviewPage({ params }: PageProps) {
                   .map((p, i) => (
                     <p key={i} className="text-cafe-700 leading-relaxed mb-4 last:mb-0">{p}</p>
                   ))}
+              </section>
+            )}
+
+            {/* ── TABELA RÁPIDA DE RANKING ── */}
+            {hasProducts && (
+              <section id="ranking" className="mb-8 bg-white rounded-2xl border border-nude-400 shadow-sm overflow-hidden">
+                <div className="px-5 py-4 border-b border-nude-300 flex items-center justify-between">
+                  <h2 className="font-serif text-lg font-bold text-cafe-800">Ranking Completo</h2>
+                  <span className="text-xs text-cafe-400">{post.postProducts.length} produtos</span>
+                </div>
+                <div className="divide-y divide-nude-200">
+                  {post.postProducts.map((pp) => {
+                    const buyLink = firstBuyUrl(pp.product);
+                    return (
+                      <div key={pp.id} className="flex items-center gap-3 px-4 py-3 hover:bg-nude-100 transition-colors">
+                        <span className="w-7 h-7 rounded-full bg-nude-300 text-cafe-600 text-xs font-bold flex items-center justify-center flex-shrink-0">
+                          {pp.posicao}
+                        </span>
+                        {pp.product.imagemUrl ? (
+                          <div className="w-12 h-12 rounded-lg overflow-hidden bg-white flex-shrink-0 border border-nude-200">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={proxyImg(pp.product.imagemUrl)} alt={pp.product.nome} className="w-full h-full object-contain" />
+                          </div>
+                        ) : (
+                          <div className="w-12 h-12 rounded-lg bg-nude-300 flex items-center justify-center flex-shrink-0">
+                            <span className="text-xl">🏠</span>
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <a href={`#produto-${pp.posicao}`} className="text-sm font-medium text-cafe-800 hover:text-brand-600 transition-colors line-clamp-1">
+                            {pp.product.nome}
+                          </a>
+                          {pp.rotuloDestaque && pp.rotuloDestaque !== "__none__" && (
+                            <span className="text-xs text-brand-600 font-semibold">{pp.rotuloDestaque}</span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          {buyLink && (
+                            <a href={buyLink.url} target="_blank" rel="nofollow noopener"
+                              className="text-xs bg-brand-500 text-white px-3 py-1.5 rounded-lg font-semibold hover:bg-brand-600 transition-colors whitespace-nowrap">
+                              Ver preço
+                            </a>
+                          )}
+                          <a href={`#produto-${pp.posicao}`} className="text-xs text-brand-500 hover:underline whitespace-nowrap hidden sm:block">
+                            Ver detalhes
+                          </a>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </section>
             )}
 
@@ -326,7 +355,6 @@ export default async function ReviewPage({ params }: PageProps) {
                   id={`produto-${pp.posicao}`}
                   className={`mb-10 bg-white rounded-2xl border-2 shadow-sm overflow-hidden ${idx === 0 ? "border-brand-300" : "border-nude-400"}`}
                 >
-                  {/* Rótulo de destaque */}
                   {pp.rotuloDestaque && pp.rotuloDestaque !== "__none__" && (
                     <div className={`${rotuloClass} text-center py-2 text-xs font-bold uppercase tracking-widest`}>
                       {pp.rotuloDestaque}
@@ -334,19 +362,12 @@ export default async function ReviewPage({ params }: PageProps) {
                   )}
 
                   <div className="p-6 md:p-8">
-                    {/* Header do produto: imagem + nome + botões */}
                     <div className="flex flex-col sm:flex-row gap-5 mb-6">
-                      {/* Imagem */}
                       <div className="flex-shrink-0">
-                        <div className="relative w-full sm:w-44 h-44 rounded-xl overflow-hidden bg-gray-100 border border-nude-300">
+                        <div className="w-full sm:w-44 h-44 rounded-xl overflow-hidden bg-white border border-nude-300 flex items-center justify-center">
                           {pp.product.imagemUrl ? (
-                            <Image
-                              src={pp.product.imagemUrl}
-                              alt={pp.product.nome}
-                              fill
-                              className="object-cover"
-                              sizes="(max-width: 640px) 100vw, 176px"
-                            />
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={proxyImg(pp.product.imagemUrl)} alt={pp.product.nome} className="w-full h-full object-contain" />
                           ) : (
                             <div className="flex items-center justify-center h-full text-5xl">🏠</div>
                           )}

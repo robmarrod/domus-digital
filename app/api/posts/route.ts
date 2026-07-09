@@ -28,7 +28,7 @@ const createPostSchema = z.object({
   status: z.enum(["DRAFT", "REVIEW", "PUBLISHED", "SCHEDULED", "ARCHIVED"]).default("DRAFT"),
   scheduledAt: z.string().datetime().optional().nullable(),
   // string vazia é tratada como null
-  imagemUrl: z.preprocess((v) => (v === "" ? null : v), z.string().url().optional().nullable()),
+  imagemUrl: z.preprocess((v) => (v === "" ? null : v), z.string().optional().nullable()),
   urlShopee: z.string().nullable().optional(),
   urlMercadoLivre: z.string().nullable().optional(),
   urlAmazon: z.string().nullable().optional(),

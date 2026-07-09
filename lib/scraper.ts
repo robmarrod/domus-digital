@@ -1,14 +1,15 @@
 /**
- * Scraper de produtos — extrai dados completos via JSON-LD, meta tags e seletores HTML.
- * Suporte: Mercado Livre, Amazon, Shopee e lojas genéricas.
+ * Scraper de produtos — extrai dados de Shopee, Mercado Livre e Amazon.
+ * Mercado Livre: usa API pública oficial (sem autenticação).
+ * Shopee/Amazon: extrai de meta tags og: e JSON-LD.
  */
 
 export interface ProdutoScrapado {
   nome: string;
-  descricaoCompleta?: string;   // descrição longa / corpo do produto
-  especificacoes?: string;      // especificações técnicas como texto
+  descricaoCompleta?: string;
+  especificacoes?: string;
   imagemUrl?: string;
-  imagensAdicionais?: string[]; // galeria de imagens
+  imagensAdicionais?: string[];
   preco?: string;
   marca?: string;
   plataforma: string;
@@ -23,45 +24,37 @@ function detectarPlataforma(url: string): string {
   return "Loja";
 }
 
-// ---- Helpers de HTML ----
+// ── Helpers HTML ─────────────────────────────────────────────────────────────
 
-function decodeHtmlEntities(str: string): string {
+function decodeHtml(str: string): string {
   return str
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#039;/g, "'")
-    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"').replace(/&#039;/g, "'").replace(/&nbsp;/g, " ")
     .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)));
 }
 
 function stripTags(html: string): string {
-  return decodeHtmlEntities(
-    html.replace(/<[^>]+>/g, " ").replace(/\s{2,}/g, " ").trim()
-  );
+  return decodeHtml(html.replace(/<[^>]+>/g, " ").replace(/\s{2,}/g, " ").trim());
 }
 
-function getMeta(html: string, property: string): string | undefined {
+function getMeta(html: string, prop: string): string | undefined {
   const patterns = [
-    new RegExp(`<meta[^>]+property=["']${property}["'][^>]+content=["']([^"']{1,2000})["']`, "i"),
-    new RegExp(`<meta[^>]+content=["']([^"']{1,2000})["'][^>]+property=["']${property}["']`, "i"),
-    new RegExp(`<meta[^>]+name=["']${property}["'][^>]+content=["']([^"']{1,2000})["']`, "i"),
-    new RegExp(`<meta[^>]+content=["']([^"']{1,2000})["'][^>]+name=["']${property}["']`, "i"),
+    new RegExp(`<meta[^>]+property=["']${prop}["'][^>]+content=["']([^"']{1,2000})["']`, "i"),
+    new RegExp(`<meta[^>]+content=["']([^"']{1,2000})["'][^>]+property=["']${prop}["']`, "i"),
+    new RegExp(`<meta[^>]+name=["']${prop}["'][^>]+content=["']([^"']{1,2000})["']`, "i"),
+    new RegExp(`<meta[^>]+content=["']([^"']{1,2000})["'][^>]+name=["']${prop}["']`, "i"),
   ];
   for (const re of patterns) {
     const m = html.match(re);
-    if (m?.[1]?.trim()) return decodeHtmlEntities(m[1].trim());
+    if (m?.[1]?.trim()) return decodeHtml(m[1].trim());
   }
-  return undefined;
 }
 
 function getTitle(html: string): string | undefined {
   const m = html.match(/<title[^>]*>([^<]+)<\/title>/i);
-  return m?.[1] ? decodeHtmlEntities(m[1].trim()) : undefined;
+  return m?.[1] ? decodeHtml(m[1].trim()) : undefined;
 }
 
-/** Extrai todos os JSON-LD da página */
 function getJsonLD(html: string): Record<string, unknown>[] {
   const results: Record<string, unknown>[] = [];
   const re = /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
@@ -76,192 +69,219 @@ function getJsonLD(html: string): Record<string, unknown>[] {
   return results;
 }
 
-/** Extrai o primeiro bloco de texto de um seletor CSS simples (classe ou id) */
-function getByClass(html: string, className: string, tag = "\\w+"): string | undefined {
-  const re = new RegExp(`<${tag}[^>]+class=["'][^"']*${className}[^"']*["'][^>]*>([\\s\\S]{1,5000}?)<\\/${tag}>`, "i");
-  const m = html.match(re);
-  return m?.[1] ? stripTags(m[1]).slice(0, 3000) : undefined;
+const HEADERS_BROWSER = {
+  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+  "Accept-Language": "pt-BR,pt;q=0.9,en;q=0.8",
+  "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+};
+
+async function fetchHtml(url: string): Promise<string> {
+  const res = await fetch(url, { headers: HEADERS_BROWSER, signal: AbortSignal.timeout(15000) });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.text();
 }
 
-function getById(html: string, id: string, tag = "\\w+"): string | undefined {
-  const re = new RegExp(`<${tag}[^>]+id=["']${id}["'][^>]*>([\\s\\S]{1,5000}?)<\\/${tag}>`, "i");
-  const m = html.match(re);
-  return m?.[1] ? stripTags(m[1]).slice(0, 3000) : undefined;
-}
+// ── Mercado Livre — API Pública ───────────────────────────────────────────────
 
-/** Extrai lista de itens de um bloco HTML (li, span etc.) */
-function getListItems(html: string, containerClass: string): string[] {
-  const containerRe = new RegExp(`class=["'][^"']*${containerClass}[^"']*["'][^>]*>([\\s\\S]{1,8000}?)</\\w+>`, "i");
-  const containerM = html.match(containerRe);
-  if (!containerM) return [];
-  const items: string[] = [];
-  const liRe = /<li[^>]*>([\s\S]*?)<\/li>/gi;
-  let m: RegExpExecArray | null;
-  while ((m = liRe.exec(containerM[1])) !== null) {
-    const text = stripTags(m[1]).trim();
-    if (text.length > 2) items.push(text);
+function extrairIdML(url: string): string | null {
+  const patterns = [
+    /\/(MLB[-_]?\d{6,12})/i,
+    /MLB[-_]?(\d{6,12})/i,
+    /\/([Mm][Ll][Bb]\d{6,12})/,
+  ];
+  for (const re of patterns) {
+    const m = url.match(re);
+    if (m) return m[1].replace("-", "").toUpperCase();
   }
-  return items.slice(0, 20);
+  return null;
 }
 
-// ---- Extratores por plataforma ----
+async function scrapeML(url: string): Promise<Partial<ProdutoScrapado>> {
+  // 1. Tenta API oficial do Mercado Livre (mais confiável)
+  const itemId = extrairIdML(url);
+  if (itemId) {
+    try {
+      const [itemRes, descRes] = await Promise.all([
+        fetch(`https://api.mercadolibre.com/items/${itemId}`, { signal: AbortSignal.timeout(10000) }),
+        fetch(`https://api.mercadolibre.com/items/${itemId}/description`, { signal: AbortSignal.timeout(10000) }),
+      ]);
+      if (itemRes.ok) {
+        const item = await itemRes.json();
+        const desc = descRes.ok ? await descRes.json() : null;
 
-function extrairMercadoLivre(html: string, url: string): Partial<ProdutoScrapado> {
-  // JSON-LD Product
-  const jsonLDs = getJsonLD(html);
-  const product = jsonLDs.find((j) => j["@type"] === "Product") as Record<string, unknown> | undefined;
+        const nome = item.title || "";
+        const preco = item.price ? `R$ ${Number(item.price).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : undefined;
+        const imagemUrl: string | undefined = item.thumbnail?.replace("-I.jpg", "-O.jpg") || item.thumbnail;
+        const imagensAdicionais: string[] = (item.pictures || []).map((p: Record<string, string>) => p.url || p.secure_url).filter(Boolean).slice(0, 5);
+        const marca = item.attributes?.find((a: Record<string, string>) => a.id === "BRAND")?.value_name;
 
-  let nome = (product?.name as string) || getMeta(html, "og:title") || getTitle(html) || "";
-  nome = nome.replace(/\s*[-|]\s*Mercado Livre.*$/i, "").trim();
+        const specs = (item.attributes || [])
+          .filter((a: Record<string, string>) => a.value_name && a.name)
+          .map((a: Record<string, string>) => `${a.name}: ${a.value_name}`)
+          .join("\n");
 
-  // Preço via JSON-LD offers
-  let preco: string | undefined;
-  const offers = product?.offers as Record<string, unknown> | undefined;
-  if (offers?.price) {
-    preco = `R$ ${offers.price}`;
-  } else {
-    const m = html.match(/itemprop=["']price["'][^>]+content=["']([^"']+)["']/i);
-    if (m) preco = `R$ ${m[1]}`;
-  }
+        const descricaoCompleta = [
+          desc?.plain_text || "",
+          specs ? `\nEspecificações:\n${specs}` : "",
+        ].filter(Boolean).join("\n\n").trim();
 
-  // Imagem
-  let imagemUrl = (product?.image as string) || getMeta(html, "og:image");
-  // ML coloca array às vezes
-  if (Array.isArray(product?.image)) imagemUrl = (product!.image as string[])[0];
-
-  // Marca
-  const marca = (product?.brand as Record<string, string>)?.name || getMeta(html, "product:brand");
-
-  // Descrição via JSON-LD
-  let descricaoCompleta = (product?.description as string) || getMeta(html, "og:description");
-
-  // Fallback: bloco de descrição no HTML
-  if (!descricaoCompleta || descricaoCompleta.length < 50) {
-    descricaoCompleta =
-      getByClass(html, "ui-pdp-description__content", "p") ||
-      getByClass(html, "item-description__text", "p") ||
-      descricaoCompleta;
+        return { nome, preco, imagemUrl, imagensAdicionais, marca, descricaoCompleta, especificacoes: specs || undefined };
+      }
+    } catch { /* cai no fallback HTML */ }
   }
 
-  // Especificações técnicas (tabela de atributos)
-  const specItems = getListItems(html, "ui-pdp-specs__table");
-  const especificacoes = specItems.length > 0 ? specItems.join("\n") : undefined;
+  // 2. Fallback: scraping HTML
+  try {
+    const html = await fetchHtml(url);
+    const jsonLDs = getJsonLD(html);
+    const product = jsonLDs.find((j) => j["@type"] === "Product") as Record<string, unknown> | undefined;
 
-  // Galeria de imagens
-  const imgRe = /https:\/\/http2\.mlstatic\.com\/D_NQ_NP[^"'\s]+\.jpg/gi;
-  const imagensAdicionais = Array.from(new Set(html.match(imgRe) || [])).slice(0, 5);
+    let nome = (product?.name as string) || getMeta(html, "og:title") || getTitle(html) || "";
+    nome = nome.replace(/\s*[-|]\s*Mercado (Livre|Libre).*$/i, "").replace(/\s*\|\s*Mercado.*$/i, "").trim();
+    if (/^mercado\s*(livre|libre)$/i.test(nome)) nome = "";
 
-  return { nome, preco, imagemUrl, imagensAdicionais, marca, descricaoCompleta, especificacoes };
+    const offers = product?.offers as Record<string, unknown> | undefined;
+    const preco = offers?.price ? `R$ ${Number(offers.price).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : undefined;
+    const imagemUrl: string | undefined = (Array.isArray(product?.image) ? (product!.image as string[])[0] : product?.image as string) || getMeta(html, "og:image");
+    const descricaoCompleta = (product?.description as string) || getMeta(html, "og:description");
+    return { nome, preco, imagemUrl, descricaoCompleta };
+  } catch {
+    return { nome: "" };
+  }
 }
 
-function extrairAmazon(html: string, url: string): Partial<ProdutoScrapado> {
-  const jsonLDs = getJsonLD(html);
-  const product = jsonLDs.find((j) => j["@type"] === "Product") as Record<string, unknown> | undefined;
+// ── Shopee ────────────────────────────────────────────────────────────────────
 
-  let nome = (product?.name as string) || getMeta(html, "og:title") || getTitle(html) || "";
-  nome = nome.replace(/\s*[-|–]\s*Amazon.*$/i, "").trim();
+async function scrapeShopee(url: string): Promise<Partial<ProdutoScrapado>> {
+  try {
+    const html = await fetchHtml(url);
+    const jsonLDs = getJsonLD(html);
+    const product = jsonLDs.find((j) => j["@type"] === "Product") as Record<string, unknown> | undefined;
 
-  const imagemUrl = getMeta(html, "og:image") || (product?.image as string);
-  const marca = getMeta(html, "og:site_name") || (product?.brand as Record<string, string>)?.name;
+    let nome = (product?.name as string) || getMeta(html, "og:title") || getTitle(html) || "";
+    nome = nome.replace(/\s*[-|]\s*(Shopee|Brasil|Shopping).*$/i, "").trim();
+    if (nome.includes("|")) nome = nome.split("|")[0].trim();
 
-  // Preço (Amazon renderiza via JS, mas às vezes está no HTML)
-  const precoM = html.match(/class=["'][^"']*a-price-whole["'][^>]*>([^<]+)</i);
-  const preco = precoM ? `R$ ${precoM[1].replace(/\D+$/, "").trim()}` : undefined;
+    const imagemUrl = getMeta(html, "og:image") || (product?.image as string);
+    const descricaoCompleta = (product?.description as string) || getMeta(html, "og:description");
 
-  // Feature bullets
-  const bulletsRaw = getById(html, "feature-bullets", "div") || getById(html, "productFeatures", "div");
-  const bullets: string[] = [];
-  if (bulletsRaw) {
-    const liRe = /<li[^>]*><span[^>]*>([^<]{5,500})<\/span>/gi;
-    let m: RegExpExecArray | null;
-    while ((m = liRe.exec(bulletsRaw)) !== null) {
-      const t = m[1].trim();
-      if (t && !t.toLowerCase().includes("make sure")) bullets.push(t);
+    const offers = product?.offers as Record<string, unknown> | undefined;
+    let preco: string | undefined;
+    if (offers?.price && Number(offers.price) > 0) {
+      preco = `R$ ${Number(offers.price).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
+    } else if (offers?.lowPrice) {
+      preco = `R$ ${Number(offers.lowPrice).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
     }
-  }
 
-  // Descrição do produto
-  let descricaoCompleta: string | undefined = (product?.description as string | undefined);
-  if (!descricaoCompleta || descricaoCompleta.length < 30) {
-    descricaoCompleta = getById(html, "productDescription", "div") || getMeta(html, "og:description");
+    const marca = (product?.brand as Record<string, string>)?.name;
+    return { nome, imagemUrl, descricaoCompleta, preco, marca };
+  } catch {
+    return { nome: "" };
   }
-  if (bullets.length > 0) {
-    descricaoCompleta = (descricaoCompleta ? descricaoCompleta + "\n\n" : "") + bullets.join("\n");
-  }
-
-  // Especificações
-  const especificacoes = getById(html, "productDetails_techSpec_section_1", "table")
-    || getById(html, "tech-spec-section", "div");
-
-  return { nome, preco, imagemUrl, marca, descricaoCompleta, especificacoes };
 }
 
-function extrairShopee(html: string, url: string): Partial<ProdutoScrapado> {
-  // Shopee é JS-rendered — extraímos o que conseguimos das meta tags e JSON-LD
-  const jsonLDs = getJsonLD(html);
-  const product = jsonLDs.find((j) => j["@type"] === "Product") as Record<string, unknown> | undefined;
+// ── Amazon ────────────────────────────────────────────────────────────────────
 
-  let nome = (product?.name as string) || getMeta(html, "og:title") || getTitle(html) || "";
-  nome = nome.replace(/\s*[-|]\s*(Shopee|Brasil).*$/i, "").trim();
+async function scrapeAmazon(url: string): Promise<Partial<ProdutoScrapado>> {
+  try {
+    const html = await fetchHtml(url);
+    const jsonLDs = getJsonLD(html);
+    const product = jsonLDs.find((j) => j["@type"] === "Product") as Record<string, unknown> | undefined;
 
-  const imagemUrl = getMeta(html, "og:image") || (product?.image as string);
-  const descricaoCompleta = (product?.description as string) || getMeta(html, "og:description");
+    let nome = (product?.name as string) || getMeta(html, "og:title") || getTitle(html) || "";
+    nome = nome.replace(/\s*[-|–:]\s*Amazon.*$/i, "").replace(/\s*:\s*Amazon\.com\.br.*$/i, "").trim();
+    if (nome.includes("|")) nome = nome.split("|")[0].trim();
+    if (/^amazon(\.com\.br)?$/i.test(nome.trim())) nome = "";
 
-  const offers = product?.offers as Record<string, unknown> | undefined;
-  const preco = offers?.price ? `R$ ${offers.price}` : undefined;
-  const marca = (product?.brand as Record<string, string>)?.name;
+    const imagemUrl = getMeta(html, "og:image") || (product?.image as string);
+    const marca = (product?.brand as Record<string, string>)?.name || getMeta(html, "og:site_name");
 
-  return { nome, imagemUrl, descricaoCompleta, preco, marca };
+    const precoM = html.match(/class=["'][^"']*a-price-whole["'][^>]*>(\d[\d.,]+)/i);
+    const preco = precoM ? `R$ ${precoM[1].trim()}` : undefined;
+
+    const bulletsMatch = html.match(/id=["']feature-bullets["'][^>]*>([\s\S]{1,8000}?)<\/div>/i);
+    const bullets: string[] = [];
+    if (bulletsMatch) {
+      const liRe = /<li[^>]*><span[^>]*>([^<]{10,500})<\/span>/gi;
+      let m: RegExpExecArray | null;
+      while ((m = liRe.exec(bulletsMatch[1])) !== null) {
+        const t = m[1].trim();
+        if (t && !t.toLowerCase().includes("make sure")) bullets.push(t);
+      }
+    }
+
+    let descricaoCompleta = (product?.description as string) || getMeta(html, "og:description") || "";
+    if (bullets.length > 0) {
+      descricaoCompleta = (descricaoCompleta ? descricaoCompleta + "\n\n" : "") + bullets.join("\n");
+    }
+
+    return { nome, imagemUrl, marca, preco, descricaoCompleta };
+  } catch {
+    return { nome: "" };
+  }
 }
 
-function extrairGenerico(html: string): Partial<ProdutoScrapado> {
-  const jsonLDs = getJsonLD(html);
-  const product = jsonLDs.find((j) => j["@type"] === "Product") as Record<string, unknown> | undefined;
+// ── Genérico ──────────────────────────────────────────────────────────────────
 
-  const nome = (product?.name as string) || getMeta(html, "og:title") || getTitle(html) || "Produto";
-  const imagemUrl = getMeta(html, "og:image") || (product?.image as string);
-  const descricaoCompleta = (product?.description as string) || getMeta(html, "og:description");
-  const offers = product?.offers as Record<string, unknown> | undefined;
-  const preco = offers?.price ? `R$ ${offers.price}` : undefined;
-  const marca = (product?.brand as Record<string, string>)?.name;
+async function scrapeGenerico(url: string): Promise<Partial<ProdutoScrapado>> {
+  try {
+    const html = await fetchHtml(url);
+    const jsonLDs = getJsonLD(html);
+    const product = jsonLDs.find((j) => j["@type"] === "Product") as Record<string, unknown> | undefined;
 
-  return { nome, imagemUrl, descricaoCompleta, preco, marca };
+    const nome = (product?.name as string) || getMeta(html, "og:title") || getTitle(html) || "";
+    const imagemUrl = getMeta(html, "og:image") || (product?.image as string);
+    const descricaoCompleta = (product?.description as string) || getMeta(html, "og:description");
+    const offers = product?.offers as Record<string, unknown> | undefined;
+    const preco = offers?.price && Number(offers.price) > 0
+      ? `R$ ${Number(offers.price).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`
+      : undefined;
+    const marca = (product?.brand as Record<string, string>)?.name;
+    return { nome, imagemUrl, descricaoCompleta, preco, marca };
+  } catch {
+    return { nome: "" };
+  }
 }
 
-// ---- Função principal ----
+// ── Função principal ──────────────────────────────────────────────────────────
 
 export async function scrapeProduto(url: string): Promise<ProdutoScrapado> {
   const plataforma = detectarPlataforma(url);
 
-  let html: string;
-  try {
-    const res = await fetch(url, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-        "Accept-Language": "pt-BR,pt;q=0.9,en;q=0.8",
-        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Cache-Control": "no-cache",
-        Pragma: "no-cache",
-      },
-      signal: AbortSignal.timeout(15000),
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    html = await res.text();
-  } catch (e) {
-    throw new Error(`Não foi possível acessar a URL: ${(e as Error).message}`);
-  }
-
   let dados: Partial<ProdutoScrapado> = {};
 
   if (plataforma === "Mercado Livre") {
-    dados = extrairMercadoLivre(html, url);
-  } else if (plataforma === "Amazon") {
-    dados = extrairAmazon(html, url);
+    dados = await scrapeML(url);
   } else if (plataforma === "Shopee") {
-    dados = extrairShopee(html, url);
+    dados = await scrapeShopee(url);
+  } else if (plataforma === "Amazon") {
+    dados = await scrapeAmazon(url);
   } else {
-    dados = extrairGenerico(html);
+    dados = await scrapeGenerico(url);
+  }
+
+  // Rejeita nomes que são apenas o nome da plataforma
+  const NOMES_PLATAFORMA = ["amazon.com.br", "amazon", "mercado livre", "mercado libre", "shopee", "shopee brasil"];
+  if (dados.nome && NOMES_PLATAFORMA.includes(dados.nome.toLowerCase().trim())) {
+    dados.nome = "";
+  }
+
+  // Fallback de nome: tenta extrair do path da URL
+  if (!dados.nome || dados.nome.length < 3) {
+    try {
+      const path = decodeURIComponent(new URL(url).pathname);
+      const segments = path.split("/").filter(Boolean);
+      const lastSegment = segments.sort((a, b) => b.length - a.length)[0] || "";
+      const nomeFromUrl = lastSegment
+        .replace(/[-_]/g, " ")
+        .replace(/\b(MLB|mlb)\d+\b/gi, "")
+        .replace(/\b\d{5,}\b/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+      if (nomeFromUrl.length > 5) {
+        dados.nome = nomeFromUrl.charAt(0).toUpperCase() + nomeFromUrl.slice(1);
+      }
+    } catch { /* ignora */ }
   }
 
   return {

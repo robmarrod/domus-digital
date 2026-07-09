@@ -111,6 +111,7 @@ export async function POST(req: NextRequest) {
     delete rankingConteudo.resumo;
     delete rankingConteudo.slug;
 
+    const primeiraImagemProduto = produtos.find((p) => p.imagemUrl)?.imagemUrl ?? null;
     const rankingPost = await prisma.post.create({
       data: {
         titulo,
@@ -118,6 +119,7 @@ export async function POST(req: NextRequest) {
         palavraPrimaria,
         categoria,
         tipo,
+        imagemUrl: primeiraImagemProduto,
         metaTitle: (rankingResult.metaTitle as string) || titulo,
         metaDescription: (rankingResult.metaDescription as string) || "",
         resumo: (rankingResult.resumo as string) || "",
@@ -228,6 +230,7 @@ export async function POST(req: NextRequest) {
             palavraPrimaria: ppPrimaria,
             categoria,
             tipo: "REVIEW",
+            imagemUrl: produto.imagemUrl ?? null,
             metaTitle: (individualResult.metaTitle as string) || tituloIndividual,
             metaDescription: (individualResult.metaDescription as string) || "",
             resumo: (individualResult.resumo as string) || "",

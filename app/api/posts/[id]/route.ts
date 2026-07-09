@@ -28,7 +28,7 @@ const updatePostSchema = z.object({
   status: z.enum(["DRAFT", "REVIEW", "PUBLISHED", "SCHEDULED", "ARCHIVED"]).optional(),
   scheduledAt: z.string().datetime().optional().nullable(),
   linksJson: z.string().nullable().optional(),
-  imagemUrl: z.preprocess((v) => (v === "" ? null : v), z.string().url().optional().nullable()),
+  imagemUrl: z.preprocess((v) => (v === "" ? null : v), z.string().optional().nullable()),
   urlShopee: z.string().nullable().optional(),
   urlMercadoLivre: z.string().nullable().optional(),
   urlAmazon: z.string().nullable().optional(),
