@@ -141,7 +141,52 @@ export default async function ReviewPage({ params }: PageProps) {
   const sidebarItems = buildSidebarItems(conteudo, post.postProducts);
   const hasProducts = post.postProducts.length > 0;
 
+  const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://domusdigital.com.br";
+  const canonicalUrl = `${BASE_URL}/reviews/${post.slug}`;
+  const faqItems = (conteudo.faq || []) as Array<{ pergunta: string; resposta: string }>;
+
+  const schemaArticle = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: post.metaTitle || post.titulo,
+    description: post.metaDescription || post.resumo || "",
+    image: post.imagemUrl ? [post.imagemUrl] : [],
+    datePublished: post.publishedAt?.toISOString() ?? post.createdAt.toISOString(),
+    dateModified: post.updatedAt.toISOString(),
+    author: { "@type": "Organization", name: process.env.NEXT_PUBLIC_SITE_NAME || "Domus Digital" },
+    publisher: {
+      "@type": "Organization",
+      name: process.env.NEXT_PUBLIC_SITE_NAME || "Domus Digital",
+      url: BASE_URL,
+    },
+    mainEntityOfPage: { "@type": "WebPage", "@id": canonicalUrl },
+  };
+
+  const schemaFaq = faqItems.length > 0 ? {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqItems.map((f) => ({
+      "@type": "Question",
+      name: f.pergunta,
+      acceptedAnswer: { "@type": "Answer", text: f.resposta },
+    })),
+  } : null;
+
+  const schemaBreadcrumb = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Início", item: BASE_URL },
+      { "@type": "ListItem", position: 2, name: post.categoria, item: `${BASE_URL}/categoria/${post.categoria.toLowerCase()}` },
+      { "@type": "ListItem", position: 3, name: post.titulo, item: canonicalUrl },
+    ],
+  };
+
   return (
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaArticle) }} />
+      {schemaFaq && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaFaq) }} />}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaBreadcrumb) }} />
     <div className="bg-nude-200 min-h-screen">
       <div className="container max-w-6xl py-8">
 
@@ -569,5 +614,6 @@ export default async function ReviewPage({ params }: PageProps) {
         </div>
       )}
     </div>
+    </>
   );
 }

@@ -6,6 +6,7 @@ import {
   Plus, Trash2, Save, Globe, Clock, Archive,
   Link as LinkIcon, X, ChevronDown, ChevronUp, Calendar,
   Image as ImageIcon, RefreshCw, Camera, FileText, Sparkles, Upload, ShoppingCart,
+  BarChart2, PenLine, RefreshCcw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -115,6 +116,46 @@ export function PostForm({ postId, defaultValues, products }: PostFormProps) {
   const [jsonError, setJsonError] = useState<string | null>(null);
   const [postProducts, setPostProducts] = useState<PostProductEntry[]>(defaultValues?.postProducts ?? []);
   const [saving, setSaving] = useState(false);
+
+  // Ranqueado — botões principais
+  const [ranqueadoLoading, setRanqueadoLoading] = useState<"analisar" | "reescrever" | "atualizar" | null>(null);
+  const [ranqueadoResultado, setRanqueadoResultado] = useState<string | null>(null);
+
+  // Ranqueado — otimizador por seção
+  type Secao = "introducao" | "faq" | "conclusao" | "guia_decisao" | "ranking" | "criterios" | "meta";
+  const [secaoLoading, setSecaoLoading] = useState<Secao | null>(null);
+  const [secaoMsg, setSecaoMsg] = useState<{ secao: Secao; msg: string; ok: boolean } | null>(null);
+
+  async function otimizarSecao(secao: Secao) {
+    if (!postId) return;
+    setSecaoLoading(secao);
+    setSecaoMsg(null);
+    try {
+      const res = await fetch("/api/ranqueado/otimizar-secao", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ postId, secao }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Erro desconhecido");
+
+      if (secao === "meta") {
+        if (data.metaTitle) setMetaTitle(data.metaTitle);
+        if (data.metaDescription) setMetaDescription(data.metaDescription);
+        setSecaoMsg({ secao, ok: true, msg: "✅ Meta tags atualizadas nos campos acima." });
+      } else {
+        let atual: Record<string, unknown> = {};
+        try { atual = JSON.parse(conteudoJson); } catch { /* mantém vazio */ }
+        atual[secao] = data.valor;
+        setConteudoJson(JSON.stringify(atual, null, 2));
+        setSecaoMsg({ secao, ok: true, msg: `✅ "${secao}" atualizado no JSON abaixo.` });
+      }
+    } catch (err) {
+      setSecaoMsg({ secao, ok: false, msg: `❌ ${(err as Error).message}` });
+    } finally {
+      setSecaoLoading(null);
+    }
+  }
 
   // Agendamento
   const [agendarPublicacao, setAgendarPublicacao] = useState(false);
@@ -610,6 +651,49 @@ export function PostForm({ postId, defaultValues, products }: PostFormProps) {
             className="font-mono text-xs min-h-[250px]"
             placeholder='{"introducao": {...}, "criterios": [...], ...}' />
           {jsonError && <p className="text-xs text-red-500 mt-2 font-mono">{jsonError}</p>}
+
+          {/* ── Otimizador por seção (ranqueado) ── */}
+          {postId && (
+            <div className="mt-4 border border-indigo-200 rounded-lg bg-indigo-50/50 p-3">
+              <p className="text-xs font-semibold text-indigo-800 mb-2 flex items-center gap-1">
+                <Sparkles className="h-3 w-3" /> Otimizar seção com IA (Blog FDF ranqueado)
+              </p>
+              <p className="text-xs text-indigo-600 mb-3">
+                Cada botão reescreve a seção correspondente com os prompts do redator-blog-fdf e injeta o resultado direto no JSON acima. Revise e salve.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {([
+                  { secao: "introducao" as const, label: "Introdução", icon: "📝" },
+                  { secao: "criterios" as const, label: "Critérios", icon: "🔍" },
+                  { secao: "ranking" as const, label: "Produtos/Prós-Contras", icon: "📦" },
+                  { secao: "guia_decisao" as const, label: "Guia de Decisão", icon: "🎯" },
+                  { secao: "conclusao" as const, label: "Conclusão", icon: "✍️" },
+                  { secao: "faq" as const, label: "FAQ (GEO/AEO)", icon: "❓" },
+                  { secao: "meta" as const, label: "Meta Tags", icon: "🏷️" },
+                ] as { secao: Secao; label: string; icon: string }[]).map(({ secao, label, icon }) => (
+                  <Button
+                    key={secao}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={!!secaoLoading}
+                    className="border-indigo-300 text-indigo-700 hover:bg-indigo-100 text-xs"
+                    onClick={() => otimizarSecao(secao)}
+                  >
+                    {secaoLoading === secao
+                      ? <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                      : <span className="mr-1">{icon}</span>}
+                    {label}
+                  </Button>
+                ))}
+              </div>
+              {secaoMsg && (
+                <p className={`mt-2 text-xs font-medium ${secaoMsg.ok ? "text-indigo-700" : "text-red-600"}`}>
+                  {secaoMsg.msg}
+                </p>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -785,6 +869,145 @@ export function PostForm({ postId, defaultValues, products }: PostFormProps) {
           )}
         </CardContent>
       </Card>
+
+      {/* ---- FERRAMENTAS IA RANQUEADO ---- */}
+      {postId && (
+        <Card className="border-purple-200 bg-purple-50/40">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-semibold text-purple-800 flex items-center gap-2">
+              <Sparkles className="h-4 w-4" /> Ferramentas IA Ranqueado
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-xs text-purple-700">
+              Analise e melhore o conteúdo deste post com base na rubrica SEO (pontuação 0-100, gate em 90).
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={!!ranqueadoLoading}
+                className="border-purple-300 text-purple-700 hover:bg-purple-100"
+                onClick={async () => {
+                  setRanqueadoLoading("analisar");
+                  setRanqueadoResultado(null);
+                  try {
+                    const res = await fetch("/api/ranqueado/analisar", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ postId }),
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error || "Erro ao analisar");
+                    const a = data.analise;
+                    const linhas = [
+                      `📊 SCORE: ${a.score}/100 — ${a.aprovado ? "✅ APROVADO" : "❌ REPROVADO (gate em 90)"}`,
+                      ``,
+                      `Qualidade: ${a.categorias?.qualidade?.pontos}/${a.categorias?.qualidade?.max} — ${a.categorias?.qualidade?.observacoes}`,
+                      `SEO: ${a.categorias?.seo?.pontos}/${a.categorias?.seo?.max} — ${a.categorias?.seo?.observacoes}`,
+                      `GEO/AEO: ${a.categorias?.geo_aeo?.pontos}/${a.categorias?.geo_aeo?.max} — ${a.categorias?.geo_aeo?.observacoes}`,
+                      `Monetização: ${a.categorias?.monetizacao?.pontos}/${a.categorias?.monetizacao?.max} — ${a.categorias?.monetizacao?.observacoes}`,
+                      `Técnico: ${a.categorias?.tecnico?.pontos}/${a.categorias?.tecnico?.max} — ${a.categorias?.tecnico?.observacoes}`,
+                      ``,
+                      a.frases_ia_encontradas?.length ? `⚠️ Frases de IA: ${a.frases_ia_encontradas.join(", ")}` : "✅ Sem frases de IA",
+                      `Burstiness: ${a.burstiness}`,
+                      a.problemas_p0?.length ? `🚫 P0: ${a.problemas_p0.join("; ")}` : "✅ Sem bloqueantes P0",
+                      ``,
+                      `💡 Recomendações:`,
+                      ...(a.recomendacoes || []).map((r: string) => `• ${r}`),
+                    ];
+                    setRanqueadoResultado(linhas.join("\n"));
+                  } catch (err) {
+                    setRanqueadoResultado(`Erro: ${(err as Error).message}`);
+                  } finally {
+                    setRanqueadoLoading(null);
+                  }
+                }}
+              >
+                {ranqueadoLoading === "analisar" ? <RefreshCw className="h-3 w-3 mr-1 animate-spin" /> : <BarChart2 className="h-3 w-3 mr-1" />}
+                Analisar
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={!!ranqueadoLoading}
+                className="border-purple-300 text-purple-700 hover:bg-purple-100"
+                onClick={async () => {
+                  setRanqueadoLoading("reescrever");
+                  setRanqueadoResultado(null);
+                  try {
+                    const res = await fetch("/api/ranqueado/reescrever", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ postId }),
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error || "Erro ao reescrever");
+                    setConteudoJson(data.conteudoJson);
+                    setRanqueadoResultado("✅ Conteúdo reescrito e carregado no editor. Revise e clique em Salvar.");
+                  } catch (err) {
+                    setRanqueadoResultado(`Erro: ${(err as Error).message}`);
+                  } finally {
+                    setRanqueadoLoading(null);
+                  }
+                }}
+              >
+                {ranqueadoLoading === "reescrever" ? <RefreshCw className="h-3 w-3 mr-1 animate-spin" /> : <PenLine className="h-3 w-3 mr-1" />}
+                Reescrever
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={!!ranqueadoLoading}
+                className="border-purple-300 text-purple-700 hover:bg-purple-100"
+                onClick={async () => {
+                  setRanqueadoLoading("atualizar");
+                  setRanqueadoResultado(null);
+                  try {
+                    const res = await fetch("/api/ranqueado/atualizar", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ postId }),
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error || "Erro ao atualizar");
+                    setConteudoJson(data.conteudoJson);
+                    if (data.titulo) setTitulo(data.titulo);
+                    setRanqueadoResultado("✅ Conteúdo atualizado para o ano atual. Revise e clique em Salvar.");
+                  } catch (err) {
+                    setRanqueadoResultado(`Erro: ${(err as Error).message}`);
+                  } finally {
+                    setRanqueadoLoading(null);
+                  }
+                }}
+              >
+                {ranqueadoLoading === "atualizar" ? <RefreshCw className="h-3 w-3 mr-1 animate-spin" /> : <RefreshCcw className="h-3 w-3 mr-1" />}
+                Atualizar para {new Date().getFullYear()}
+              </Button>
+            </div>
+
+            {ranqueadoResultado && (
+              <div className="rounded-md bg-white border border-purple-200 p-3">
+                <pre className="text-xs text-gray-700 whitespace-pre-wrap font-sans">{ranqueadoResultado}</pre>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="mt-2 text-xs text-gray-400"
+                  onClick={() => setRanqueadoResultado(null)}
+                >
+                  Fechar
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* ---- BOTÕES (salvar post manual) ---- */}
       <Card className="border-gray-200">
