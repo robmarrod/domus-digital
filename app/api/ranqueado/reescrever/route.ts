@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+export const maxDuration = 300; // 5 min — necessário para reescritas longas
+
 const PROMPT_REESCREVER = `Você é um redator SEO especialista em reviews de produtos para blogs de afiliado (Blog FDF).
 
 Você receberá um artigo com score baixo ou problemas identificados. Sua tarefa é reescrever as seções fracas mantendo a estrutura geral.

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+export const maxDuration = 300;
+
 const ANO_ATUAL = new Date().getFullYear();
 
 const PROMPT_ATUALIZAR = `Você é um editor de conteúdo SEO especialista em manter artigos de blog atualizados e relevantes.

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+export const maxDuration = 300;
+
 const PROMPT_ANALISAR = `Você é um revisor SEO especialista que analisa artigos de blog de review/afiliado.
 
 Analise o artigo abaixo e pontue nas 5 categorias da rubrica (total 100 pts):

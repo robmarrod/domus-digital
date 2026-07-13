@@ -8,6 +8,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+export const maxDuration = 300;
+
 const ANO = new Date().getFullYear();
 
 // ── Prompts por seção — extraídos do redator-blog-fdf e reviewer ranqueado ──────────────────
