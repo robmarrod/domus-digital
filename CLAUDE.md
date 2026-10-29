@@ -7,7 +7,8 @@ Blog de reviews de **Casa Inteligente / Smart Home / Tech para Casa** com painel
 - **Nicho:** Smart Home, automação residencial, tecnologia para casa
 - **Cor principal (brand):** `#00B4C8` teal/ciano
 - **Cor accent:** `#E84444` vermelho coral
-- **Admin:** usuário `admin` / senha `domus2024`
+- **Admin:** usuário e senha vêm das variáveis `ADMIN_USER` / `ADMIN_SECRET` no ambiente (sem elas, /admin e /api respondem 503) (nunca escrever a senha aqui; este repo é público)
+- **Indexação:** bloqueada até `SITE_INDEXAVEL="true"` (ver `app/layout.tsx`)
 - **Deploy:** `https://domusdigital.com.br`
 
 ## Stack

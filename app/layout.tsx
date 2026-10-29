@@ -37,9 +37,11 @@ export const metadata: Metadata = {
     locale: "pt_BR",
     siteName: "Achadinhos da Elis",
   },
+  // Fora do índice do Google até o Domus ter conteúdo próprio (o tema ainda é cópia do Achadinhos).
+  // Para liberar: definir SITE_INDEXAVEL="true" no ambiente e refazer o build.
   robots: {
-    index: true,
-    follow: true,
+    index: process.env.SITE_INDEXAVEL === "true",
+    follow: process.env.SITE_INDEXAVEL === "true",
   },
 };
 
