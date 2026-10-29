@@ -1,6 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
+    // Otimizador desligado: o Next 14 não recebe mais correção para as falhas
+    // críticas de execução remota no /_next/image. Reavaliar ao migrar para o Next 15.5+/16.
+    unoptimized: true,
     remotePatterns: [
       { protocol: 'https', hostname: '**.shopee.com.br' },
       { protocol: 'https', hostname: '**.mercadolibre.com' },
